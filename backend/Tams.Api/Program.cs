@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Tams.Api.Application.Departments;
 using Tams.Api.Infrastructure.Data;
+using Tams.Api.Application.AssetTypes;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddScoped<AssetTypeService>();
 
 var connectionString = builder.Configuration.GetConnectionString("TamsDb")
     ?? throw new InvalidOperationException("Connection string 'TamsDb' was not found.");

@@ -12,6 +12,10 @@ public sealed class TamsDbContext : DbContext
 
     public DbSet<Department> Departments => Set<Department>();
 
+    public DbSet<AssetType> AssetTypes => Set<AssetType>();
+
+    public DbSet<AssetVariant> AssetVariants => Set<AssetVariant>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
