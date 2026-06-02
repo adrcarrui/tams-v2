@@ -1,0 +1,106 @@
+# =========================================================
+# TAMS v2 - Git ignore
+# ASP.NET Core Web API + React + PostgreSQL
+# =========================================================
+
+# -------------------------
+# .NET / ASP.NET Core
+# -------------------------
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.rsuser
+*.userosscache
+*.sln.docstates
+
+# Build outputs
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild/
+[Bb]uilds/
+
+# Test results
+TestResults/
+coverage/
+coverage.cobertura.xml
+*.trx
+
+# Rider / JetBrains
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# -------------------------
+# ASP.NET configuration
+# -------------------------
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.Local.json
+
+# Secrets / sensitive config
+*.secret.json
+secrets.json
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# -------------------------
+# Entity Framework
+# -------------------------
+# Do NOT ignore Migrations.
+# EF Core migrations should be committed.
+# Example:
+# backend/Tams.Api/Migrations/
+
+# -------------------------
+# React / Node / Vite
+# -------------------------
+node_modules/
+dist/
+build/
+.vite/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# -------------------------
+# Docker local volumes / temp
+# -------------------------
+docker-data/
+postgres-data/
+
+# -------------------------
+# Logs
+# -------------------------
+*.log
+logs/
+
+# -------------------------
+# OS files
+# -------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# -------------------------
+# Temporary files
+# -------------------------
+*.tmp
+*.temp
+*.bak
+*.swp
