@@ -1,0 +1,6 @@
+@Tams.Tests_HostAddress = http://localhost:5250
+
+GET {{Tams.Tests_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
