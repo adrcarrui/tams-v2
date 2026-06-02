@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Tams.Api.Infrastructure.Data;
 
 namespace Tams.Api.Controllers;
 
@@ -6,6 +7,13 @@ namespace Tams.Api.Controllers;
 [Route("api/[controller]")]
 public sealed class HealthController : ControllerBase
 {
+    private readonly TamsDbContext _dbContext;
+
+    public HealthController(TamsDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
     [HttpGet]
     public IActionResult Get()
     {
@@ -13,6 +21,18 @@ public sealed class HealthController : ControllerBase
         {
             status = "ok",
             app = "TAMS API"
+        });
+    }
+
+    [HttpGet("db")]
+    public async Task<IActionResult> GetDatabaseHealth()
+    {
+        var canConnect = await _dbContext.Database.CanConnectAsync();
+
+        return Ok(new
+        {
+            status = canConnect ? "ok" : "error",
+            database = canConnect ? "reachable" : "unreachable"
         });
     }
 }

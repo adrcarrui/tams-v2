@@ -1,0 +1,16 @@
+services:
+  tams-postgres:
+    image: postgres:16
+    container_name: tams-v2-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tams_v2}
+      POSTGRES_USER: ${POSTGRES_USER:-tams_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tams_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - tams_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  tams_postgres_data:

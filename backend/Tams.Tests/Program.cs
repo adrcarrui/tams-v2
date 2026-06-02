@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using Tams.Api.Infrastructure.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

@@ -1,6 +1,20 @@
+using Microsoft.EntityFrameworkCore;
+using Tams.Api.Application.Departments;
+using Tams.Api.Infrastructure.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+var connectionString = builder.Configuration.GetConnectionString("TamsDb")
+    ?? throw new InvalidOperationException("Connection string 'TamsDb' was not found.");
+
+builder.Services.AddDbContext<TamsDbContext>(options =>
+{
+    options.UseNpgsql(connectionString);
+});
+
+builder.Services.AddScoped<DepartmentService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
@@ -12,7 +26,14 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-//app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
+
+app.MapGet("/", () => Results.Ok(new
+{
+    app = "TAMS API",
+    status = "running",
+    health = "/api/health"
+}));
 
 app.MapControllers();
 
