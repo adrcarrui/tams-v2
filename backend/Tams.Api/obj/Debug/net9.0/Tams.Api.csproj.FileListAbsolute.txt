@@ -1,7 +1,6 @@
 C:\Users\adrian\SIA\projects\tams-v2\backend\Tams.Api\bin\Debug\net9.0\appsettings.Development.json
 C:\Users\adrian\SIA\projects\tams-v2\backend\Tams.Api\bin\Debug\net9.0\appsettings.json
 C:\Users\adrian\SIA\projects\tams-v2\backend\Tams.Api\bin\Debug\net9.0\Tams.Api.staticwebassets.endpoints.json
-C:\Users\adrian\SIA\projects\tams-v2\backend\Tams.Api\bin\Debug\net9.0\Tams.Api.exe
 C:\Users\adrian\SIA\projects\tams-v2\backend\Tams.Api\bin\Debug\net9.0\Tams.Api.deps.json
 C:\Users\adrian\SIA\projects\tams-v2\backend\Tams.Api\bin\Debug\net9.0\Tams.Api.runtimeconfig.json
 C:\Users\adrian\SIA\projects\tams-v2\backend\Tams.Api\bin\Debug\net9.0\Tams.Api.dll
