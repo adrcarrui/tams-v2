@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Tams.Api.Application.Departments;
 using Tams.Api.Infrastructure.Data;
 using Tams.Api.Application.AssetTypes;
+using Tams.Api.Application.Devices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,7 @@ builder.Services.AddDbContext<TamsDbContext>(options =>
 });
 
 builder.Services.AddScoped<DepartmentService>();
+builder.Services.AddScoped<DeviceService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
