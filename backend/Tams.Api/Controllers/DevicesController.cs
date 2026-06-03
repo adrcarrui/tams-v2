@@ -18,7 +18,7 @@ public sealed class DevicesController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(PagedResultDto<DeviceDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetDevices(
         [FromQuery] GetDevicesRequest request,
         CancellationToken cancellationToken)
@@ -31,11 +31,56 @@ public sealed class DevicesController : ControllerBase
         }
         catch (ArgumentException exception)
         {
-            return BadRequest(new
+            return BadRequest(new ApiErrorDto
             {
-                code = "INVALID_DEVICE_FILTER",
-                message = exception.Message
+                Code = "INVALID_DEVICE_FILTER",
+                Message = exception.Message
             });
         }
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetDeviceById(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        var device = await _deviceService.GetDeviceByIdAsync(id, cancellationToken);
+
+        if (device is null)
+        {
+            return NotFound(new ApiErrorDto
+            {
+                Code = "DEVICE_NOT_FOUND",
+                Message = "Device was not found."
+            });
+        }
+
+        return Ok(device);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateDevice(
+        [FromBody] CreateDeviceRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _deviceService.CreateDeviceAsync(request, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new ApiErrorDto
+            {
+                Code = result.ErrorCode!,
+                Message = result.ErrorMessage!
+            });
+        }
+
+        return CreatedAtAction(
+            nameof(GetDeviceById),
+            new { id = result.Value!.Id },
+            result.Value);
     }
 }
