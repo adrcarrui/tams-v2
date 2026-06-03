@@ -473,3 +473,23 @@ a {
     width: 100%;
   }
 }
+
+.actions-column {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table-action-button {
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #00205d;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.table-action-button:hover {
+  border-color: #00205d;
+  background: #f3f6fb;
+}

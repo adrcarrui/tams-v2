@@ -2,9 +2,10 @@ import type { DeviceDto } from "../types/deviceTypes";
 
 type DevicesTableProps = {
   devices: DeviceDto[];
+  onEdit: (device: DeviceDto) => void;
 };
 
-export function DevicesTable({ devices }: DevicesTableProps) {
+export function DevicesTable({ devices, onEdit }: DevicesTableProps) {
   if (devices.length === 0) {
     return <p className="empty-state">No devices found.</p>;
   }
@@ -20,8 +21,10 @@ export function DevicesTable({ devices }: DevicesTableProps) {
             <th>Identifier</th>
             <th>Status</th>
             <th>Department</th>
+            <th className="actions-column">Actions</th>
           </tr>
         </thead>
+
         <tbody>
           {devices.map((device) => (
             <tr key={device.id}>
@@ -35,6 +38,15 @@ export function DevicesTable({ devices }: DevicesTableProps) {
                 </span>
               </td>
               <td>{device.managedByDepartmentCode}</td>
+              <td className="actions-column">
+                <button
+                  type="button"
+                  className="table-action-button"
+                  onClick={() => onEdit(device)}
+                >
+                  Edit
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

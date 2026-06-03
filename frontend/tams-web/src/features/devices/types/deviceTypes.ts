@@ -37,3 +37,13 @@ export type CreateDeviceRequest = {
   serialNumber: string | null;
   notes: string | null;
 };
+
+export type UpdateDeviceRequest = {
+  name: string;
+  assetVariantId: number;
+  uid: string | null;
+  barcode: string | null;
+  serialNumber: string | null;
+  notes: string | null;
+  isActive: boolean;
+};

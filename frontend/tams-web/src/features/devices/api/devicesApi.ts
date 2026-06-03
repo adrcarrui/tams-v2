@@ -1,8 +1,9 @@
-import { getJson, postJson } from "../../../api/httpClient";
+import { getJson, postJson, putJson } from "../../../api/httpClient";
 import type {
   CreateDeviceRequest,
   DeviceDto,
   PagedResultDto,
+  UpdateDeviceRequest,
 } from "../types/deviceTypes";
 
 export type GetDevicesParams = {
@@ -59,4 +60,15 @@ export async function createDevice(
   request: CreateDeviceRequest,
 ): Promise<DeviceDto> {
   return postJson<CreateDeviceRequest, DeviceDto>("/api/devices", request);
+}
+
+export async function getDeviceById(id: number): Promise<DeviceDto> {
+  return getJson<DeviceDto>(`/api/devices/${id}`);
+}
+
+export async function updateDevice(
+  id: number,
+  request: UpdateDeviceRequest,
+): Promise<DeviceDto> {
+  return putJson<UpdateDeviceRequest, DeviceDto>(`/api/devices/${id}`, request);
 }

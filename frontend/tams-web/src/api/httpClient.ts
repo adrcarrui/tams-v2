@@ -71,3 +71,23 @@ async function buildApiError(response: Response): Promise<ApiClientError> {
     );
   }
 }
+
+export async function putJson<TBody, TResponse>(
+  path: string,
+  body: TBody,
+): Promise<TResponse> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: "PUT",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
+
+  return response.json() as Promise<TResponse>;
+}

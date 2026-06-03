@@ -8,7 +8,9 @@ import {
   type DeviceFiltersValue,
 } from "../components/DeviceFilters";
 import { DevicesTable } from "../components/DevicesTable";
+import { EditDeviceModal } from "../components/EditDeviceModal";
 import { PaginationControls } from "../components/PaginationControls";
+import type { DeviceDto } from "../types/deviceTypes";
 
 const pageSize = 25;
 
@@ -25,6 +27,7 @@ export function DevicesPage() {
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<DeviceFiltersValue>(initialFilters);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingDevice, setEditingDevice] = useState<DeviceDto | null>(null);
 
   const assetTypesQuery = useQuery({
     queryKey: ["asset-types"],
@@ -54,13 +57,21 @@ export function DevicesPage() {
     setPage(1);
   }
 
-  async function handleDeviceCreated() {
-    setIsCreateModalOpen(false);
-    setPage(1);
-
+  async function refreshDevices() {
     await queryClient.invalidateQueries({
       queryKey: ["devices"],
     });
+  }
+
+  async function handleDeviceCreated() {
+    setIsCreateModalOpen(false);
+    setPage(1);
+    await refreshDevices();
+  }
+
+  async function handleDeviceUpdated() {
+    setEditingDevice(null);
+    await refreshDevices();
   }
 
   if (assetTypesQuery.isLoading || devicesQuery.isLoading) {
@@ -94,6 +105,7 @@ export function DevicesPage() {
   }
 
   const devices = devicesQuery.data;
+  const assetTypes = assetTypesQuery.data ?? [];
 
   return (
     <section>
@@ -114,11 +126,14 @@ export function DevicesPage() {
 
       <DeviceFilters
         value={filters}
-        assetTypes={assetTypesQuery.data ?? []}
+        assetTypes={assetTypes}
         onChange={handleFiltersChange}
       />
 
-      <DevicesTable devices={devices?.items ?? []} />
+      <DevicesTable
+        devices={devices?.items ?? []}
+        onEdit={setEditingDevice}
+      />
 
       <PaginationControls
         page={devices?.page ?? 1}
@@ -131,9 +146,18 @@ export function DevicesPage() {
 
       {isCreateModalOpen && (
         <CreateDeviceModal
-          assetTypes={assetTypesQuery.data ?? []}
+          assetTypes={assetTypes}
           onClose={() => setIsCreateModalOpen(false)}
           onCreated={handleDeviceCreated}
+        />
+      )}
+
+      {editingDevice && (
+        <EditDeviceModal
+          device={editingDevice}
+          assetTypes={assetTypes}
+          onClose={() => setEditingDevice(null)}
+          onUpdated={handleDeviceUpdated}
         />
       )}
     </section>
