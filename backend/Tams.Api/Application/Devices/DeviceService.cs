@@ -70,12 +70,11 @@ public sealed class DeviceService
 
         var totalItems = await query.CountAsync(cancellationToken);
 
-        var items = await query
+        var items = await ProjectToDeviceDto(query)
             .OrderBy(x => x.Name)
             .ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(x => ToDeviceDto(x))
             .ToListAsync(cancellationToken);
 
         return new PagedResultDto<DeviceDto>
@@ -91,10 +90,10 @@ public sealed class DeviceService
         int id,
         CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Devices
-            .AsNoTracking()
-            .Where(x => x.Id == id)
-            .Select(x => ToDeviceDto(x))
+        return await ProjectToDeviceDto(
+                _dbContext.Devices
+                    .AsNoTracking()
+                    .Where(x => x.Id == id))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -122,43 +121,21 @@ public sealed class DeviceService
                 "Asset variant is required.");
         }
 
-        var assetVariant = await _dbContext.AssetVariants
-            .AsNoTracking()
-            .Include(x => x.AssetType)
-            .FirstOrDefaultAsync(
-                x => x.Id == request.AssetVariantId,
-                cancellationToken);
+        var assetVariantValidation = await ValidateAssetVariantAsync(
+            request.AssetVariantId,
+            cancellationToken);
 
-        if (assetVariant is null)
+        if (!assetVariantValidation.IsSuccess)
         {
             return ServiceResult<DeviceDto>.Failure(
-                "ASSET_VARIANT_NOT_FOUND",
-                "Asset variant was not found.");
+                assetVariantValidation.ErrorCode!,
+                assetVariantValidation.ErrorMessage!);
         }
 
-        if (!assetVariant.IsActive)
-        {
-            return ServiceResult<DeviceDto>.Failure(
-                "ASSET_VARIANT_INACTIVE",
-                "Asset variant is inactive.");
-        }
-
-        if (assetVariant.AssetType is null)
-        {
-            return ServiceResult<DeviceDto>.Failure(
-                "ASSET_TYPE_NOT_FOUND",
-                "Asset type was not found.");
-        }
-
-        if (!assetVariant.AssetType.IsActive)
-        {
-            return ServiceResult<DeviceDto>.Failure(
-                "ASSET_TYPE_INACTIVE",
-                "Asset type is inactive.");
-        }
+        var assetVariant = assetVariantValidation.Value!;
 
         var identifierValidation = ValidateIdentifierPolicy(
-            assetVariant.AssetType.IdentifierPolicy,
+            assetVariant.AssetType!.IdentifierPolicy,
             uid,
             barcode);
 
@@ -170,6 +147,7 @@ public sealed class DeviceService
         }
 
         var duplicateValidation = await ValidateUniqueIdentifiersAsync(
+            deviceIdToExclude: null,
             uid,
             barcode,
             serialNumber,
@@ -211,6 +189,152 @@ public sealed class DeviceService
         return ServiceResult<DeviceDto>.Success(createdDevice);
     }
 
+    public async Task<ServiceResult<DeviceDto>> UpdateDeviceAsync(
+        int id,
+        UpdateDeviceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var device = await _dbContext.Devices
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (device is null)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_NOT_FOUND",
+                "Device was not found.");
+        }
+
+        if (device.Status == DeviceStatus.Annulled)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_ANNULLED_CANNOT_BE_EDITED",
+                "Annulled devices cannot be edited.");
+        }
+
+        var name = NormalizeOptionalText(request.Name);
+        var uid = NormalizeOptionalText(request.Uid);
+        var barcode = NormalizeOptionalText(request.Barcode);
+        var serialNumber = NormalizeOptionalText(request.SerialNumber);
+        var notes = NormalizeOptionalText(request.Notes);
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_NAME_REQUIRED",
+                "Device name is required.");
+        }
+
+        if (request.AssetVariantId <= 0)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_ASSET_VARIANT_REQUIRED",
+                "Asset variant is required.");
+        }
+
+        var assetVariantValidation = await ValidateAssetVariantAsync(
+            request.AssetVariantId,
+            cancellationToken);
+
+        if (!assetVariantValidation.IsSuccess)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                assetVariantValidation.ErrorCode!,
+                assetVariantValidation.ErrorMessage!);
+        }
+
+        var assetVariant = assetVariantValidation.Value!;
+
+        var identifierValidation = ValidateIdentifierPolicy(
+            assetVariant.AssetType!.IdentifierPolicy,
+            uid,
+            barcode);
+
+        if (!identifierValidation.IsSuccess)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                identifierValidation.ErrorCode!,
+                identifierValidation.ErrorMessage!);
+        }
+
+        var duplicateValidation = await ValidateUniqueIdentifiersAsync(
+            deviceIdToExclude: id,
+            uid,
+            barcode,
+            serialNumber,
+            cancellationToken);
+
+        if (!duplicateValidation.IsSuccess)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                duplicateValidation.ErrorCode!,
+                duplicateValidation.ErrorMessage!);
+        }
+
+        device.Name = name;
+        device.AssetVariantId = assetVariant.Id;
+        device.Uid = uid;
+        device.Barcode = barcode;
+        device.SerialNumber = serialNumber;
+        device.Notes = notes;
+        device.IsActive = request.IsActive;
+        device.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var updatedDevice = await GetDeviceByIdAsync(device.Id, cancellationToken);
+
+        if (updatedDevice is null)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_UPDATE_FAILED",
+                "Device was updated but could not be loaded.");
+        }
+
+        return ServiceResult<DeviceDto>.Success(updatedDevice);
+    }
+
+    private async Task<ServiceResult<AssetVariant>> ValidateAssetVariantAsync(
+        int assetVariantId,
+        CancellationToken cancellationToken)
+    {
+        var assetVariant = await _dbContext.AssetVariants
+            .AsNoTracking()
+            .Include(x => x.AssetType)
+            .FirstOrDefaultAsync(
+                x => x.Id == assetVariantId,
+                cancellationToken);
+
+        if (assetVariant is null)
+        {
+            return ServiceResult<AssetVariant>.Failure(
+                "ASSET_VARIANT_NOT_FOUND",
+                "Asset variant was not found.");
+        }
+
+        if (!assetVariant.IsActive)
+        {
+            return ServiceResult<AssetVariant>.Failure(
+                "ASSET_VARIANT_INACTIVE",
+                "Asset variant is inactive.");
+        }
+
+        if (assetVariant.AssetType is null)
+        {
+            return ServiceResult<AssetVariant>.Failure(
+                "ASSET_TYPE_NOT_FOUND",
+                "Asset type was not found.");
+        }
+
+        if (!assetVariant.AssetType.IsActive)
+        {
+            return ServiceResult<AssetVariant>.Failure(
+                "ASSET_TYPE_INACTIVE",
+                "Asset type is inactive.");
+        }
+
+        return ServiceResult<AssetVariant>.Success(assetVariant);
+    }
+
     private static ServiceResult<bool> ValidateIdentifierPolicy(
         AssetIdentifierPolicy policy,
         string? uid,
@@ -248,6 +372,7 @@ public sealed class DeviceService
     }
 
     private async Task<ServiceResult<bool>> ValidateUniqueIdentifiersAsync(
+        int? deviceIdToExclude,
         string? uid,
         string? barcode,
         string? serialNumber,
@@ -257,7 +382,10 @@ public sealed class DeviceService
         {
             var uidExists = await _dbContext.Devices
                 .AsNoTracking()
-                .AnyAsync(x => x.Uid == uid, cancellationToken);
+                .AnyAsync(
+                    x => x.Uid == uid &&
+                         (!deviceIdToExclude.HasValue || x.Id != deviceIdToExclude.Value),
+                    cancellationToken);
 
             if (uidExists)
             {
@@ -271,7 +399,10 @@ public sealed class DeviceService
         {
             var barcodeExists = await _dbContext.Devices
                 .AsNoTracking()
-                .AnyAsync(x => x.Barcode == barcode, cancellationToken);
+                .AnyAsync(
+                    x => x.Barcode == barcode &&
+                         (!deviceIdToExclude.HasValue || x.Id != deviceIdToExclude.Value),
+                    cancellationToken);
 
             if (barcodeExists)
             {
@@ -285,7 +416,10 @@ public sealed class DeviceService
         {
             var serialNumberExists = await _dbContext.Devices
                 .AsNoTracking()
-                .AnyAsync(x => x.SerialNumber == serialNumber, cancellationToken);
+                .AnyAsync(
+                    x => x.SerialNumber == serialNumber &&
+                         (!deviceIdToExclude.HasValue || x.Id != deviceIdToExclude.Value),
+                    cancellationToken);
 
             if (serialNumberExists)
             {
@@ -298,9 +432,9 @@ public sealed class DeviceService
         return ServiceResult<bool>.Success(true);
     }
 
-    private static DeviceDto ToDeviceDto(Device device)
+    private static IQueryable<DeviceDto> ProjectToDeviceDto(IQueryable<Device> query)
     {
-        return new DeviceDto
+        return query.Select(device => new DeviceDto
         {
             Id = device.Id,
             Name = device.Name,
@@ -336,7 +470,7 @@ public sealed class DeviceService
             Notes = device.Notes,
             CreatedAtUtc = device.CreatedAtUtc,
             UpdatedAtUtc = device.UpdatedAtUtc
-        };
+        });
     }
 
     private static string? NormalizeOptionalText(string? value)

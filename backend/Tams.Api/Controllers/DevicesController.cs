@@ -83,4 +83,34 @@ public sealed class DevicesController : ControllerBase
             new { id = result.Value!.Id },
             result.Value);
     }
+
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateDevice(
+        int id,
+        [FromBody] UpdateDeviceRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _deviceService.UpdateDeviceAsync(id, request, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            var error = new ApiErrorDto
+            {
+                Code = result.ErrorCode!,
+                Message = result.ErrorMessage!
+            };
+
+            if (result.ErrorCode == "DEVICE_NOT_FOUND")
+            {
+                return NotFound(error);
+            }
+
+            return BadRequest(error);
+        }
+
+        return Ok(result.Value);
+    }
 }
