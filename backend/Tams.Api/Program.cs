@@ -1,13 +1,14 @@
 using Microsoft.EntityFrameworkCore;
-using Tams.Api.Application.Departments;
-using Tams.Api.Infrastructure.Data;
 using Tams.Api.Application.AssetTypes;
+using Tams.Api.Application.Departments;
 using Tams.Api.Application.Devices;
+using Tams.Api.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+const string CorsPolicyName = "TamsFrontend";
+
 builder.Services.AddControllers();
-builder.Services.AddScoped<AssetTypeService>();
 
 var connectionString = builder.Configuration.GetConnectionString("TamsDb")
     ?? throw new InvalidOperationException("Connection string 'TamsDb' was not found.");
@@ -18,7 +19,19 @@ builder.Services.AddDbContext<TamsDbContext>(options =>
 });
 
 builder.Services.AddScoped<DepartmentService>();
+builder.Services.AddScoped<AssetTypeService>();
 builder.Services.AddScoped<DeviceService>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicyName, policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
@@ -32,12 +45,7 @@ if (app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection();
 
-app.MapGet("/", () => Results.Ok(new
-{
-    app = "TAMS API",
-    status = "running",
-    health = "/api/health"
-}));
+app.UseCors(CorsPolicyName);
 
 app.MapControllers();
 
