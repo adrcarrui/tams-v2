@@ -1,4 +1,4 @@
-import { getJson, postJson, putJson } from "../../../api/httpClient";
+import { getJson, patchJson, postJson, putJson } from "../../../api/httpClient";
 import type {
   CreateDeviceRequest,
   DeviceDto,
@@ -71,4 +71,16 @@ export async function updateDevice(
   request: UpdateDeviceRequest,
 ): Promise<DeviceDto> {
   return putJson<UpdateDeviceRequest, DeviceDto>(`/api/devices/${id}`, request);
+}
+
+export async function markDeviceAsLost(id: number): Promise<DeviceDto> {
+  return patchJson<DeviceDto>(`/api/devices/${id}/mark-lost`);
+}
+
+export async function annulDevice(id: number): Promise<DeviceDto> {
+  return patchJson<DeviceDto>(`/api/devices/${id}/annul`);
+}
+
+export async function restoreDevice(id: number): Promise<DeviceDto> {
+  return patchJson<DeviceDto>(`/api/devices/${id}/restore`);
 }

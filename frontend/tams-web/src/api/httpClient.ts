@@ -91,3 +91,18 @@ export async function putJson<TBody, TResponse>(
 
   return response.json() as Promise<TResponse>;
 }
+
+export async function patchJson<TResponse>(path: string): Promise<TResponse> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: "PATCH",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw await buildApiError(response);
+  }
+
+  return response.json() as Promise<TResponse>;
+}

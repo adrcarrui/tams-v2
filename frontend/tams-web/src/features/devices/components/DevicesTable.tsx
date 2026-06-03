@@ -3,9 +3,18 @@ import type { DeviceDto } from "../types/deviceTypes";
 type DevicesTableProps = {
   devices: DeviceDto[];
   onEdit: (device: DeviceDto) => void;
+  onMarkLost: (device: DeviceDto) => void;
+  onAnnul: (device: DeviceDto) => void;
+  onRestore: (device: DeviceDto) => void;
 };
 
-export function DevicesTable({ devices, onEdit }: DevicesTableProps) {
+export function DevicesTable({
+  devices,
+  onEdit,
+  onMarkLost,
+  onAnnul,
+  onRestore,
+}: DevicesTableProps) {
   if (devices.length === 0) {
     return <p className="empty-state">No devices found.</p>;
   }
@@ -39,13 +48,46 @@ export function DevicesTable({ devices, onEdit }: DevicesTableProps) {
               </td>
               <td>{device.managedByDepartmentCode}</td>
               <td className="actions-column">
-                <button
-                  type="button"
-                  className="table-action-button"
-                  onClick={() => onEdit(device)}
-                >
-                  Edit
-                </button>
+                <div className="table-actions">
+                  <button
+                    type="button"
+                    className="table-action-button"
+                    onClick={() => onEdit(device)}
+                    disabled={device.status === "Annulled"}
+                  >
+                    Edit
+                  </button>
+
+                  {device.status !== "Lost" && device.status !== "Annulled" && (
+                    <button
+                      type="button"
+                      className="table-action-button"
+                      onClick={() => onMarkLost(device)}
+                    >
+                      Mark lost
+                    </button>
+                  )}
+
+                  {device.status !== "Annulled" && (
+                    <button
+                      type="button"
+                      className="table-action-button danger-action"
+                      onClick={() => onAnnul(device)}
+                    >
+                      Annul
+                    </button>
+                  )}
+
+                  {(device.status === "Lost" || device.status === "Annulled") && (
+                    <button
+                      type="button"
+                      className="table-action-button"
+                      onClick={() => onRestore(device)}
+                    >
+                      Restore
+                    </button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}

@@ -493,3 +493,25 @@ a {
   border-color: #00205d;
   background: #f3f6fb;
 }
+
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.table-action-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.danger-action {
+  color: #b42318;
+}
+
+.danger-action:hover {
+  border-color: #b42318;
+  color: #b42318;
+  background: #fff2f0;
+}
