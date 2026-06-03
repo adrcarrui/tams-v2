@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Tams.Api.Application.Devices;
 using Tams.Api.Contracts.Common;
 using Tams.Api.Contracts.Devices;
+using Tams.Api.Application.Common;
 
 namespace Tams.Api.Controllers;
 
@@ -113,4 +114,70 @@ public sealed class DevicesController : ControllerBase
 
         return Ok(result.Value);
     }
+    [HttpPatch("{id:int}/mark-lost")]
+    [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> MarkDeviceAsLost(
+    int id,
+    CancellationToken cancellationToken)
+    {
+        var result = await _deviceService.MarkDeviceAsLostAsync(id, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return ToErrorResult(result);
+        }
+
+        return Ok(result.Value);
+    }
+    [HttpPatch("{id:int}/annul")]
+    [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AnnulDevice(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _deviceService.AnnulDeviceAsync(id, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return ToErrorResult(result);
+        }
+
+        return Ok(result.Value);
+    }
+    [HttpPatch("{id:int}/restore")]
+    [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RestoreDevice(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _deviceService.RestoreDeviceAsync(id, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return ToErrorResult(result);
+        }
+
+        return Ok(result.Value);
+    }
+    private IActionResult ToErrorResult<T>(ServiceResult<T> result)
+{
+    var error = new ApiErrorDto
+    {
+        Code = result.ErrorCode!,
+        Message = result.ErrorMessage!
+    };
+
+    if (result.ErrorCode == "DEVICE_NOT_FOUND")
+    {
+        return NotFound(error);
+    }
+
+    return BadRequest(error);
+}
 }

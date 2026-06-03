@@ -482,4 +482,125 @@ public sealed class DeviceService
 
         return value.Trim();
     }
+    public async Task<ServiceResult<DeviceDto>> MarkDeviceAsLostAsync(
+    int id,
+    CancellationToken cancellationToken = default)
+    {
+        var device = await _dbContext.Devices
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (device is null)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_NOT_FOUND",
+                "Device was not found.");
+        }
+
+        if (device.Status == DeviceStatus.Annulled)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_ANNULLED_CANNOT_BE_MARKED_LOST",
+                "Annulled devices cannot be marked as lost.");
+        }
+
+        if (device.Status == DeviceStatus.Lost)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_ALREADY_LOST",
+                "Device is already marked as lost.");
+        }
+
+        device.Status = DeviceStatus.Lost;
+        device.IsActive = true;
+        device.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var updatedDevice = await GetDeviceByIdAsync(device.Id, cancellationToken);
+
+        if (updatedDevice is null)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_UPDATE_FAILED",
+                "Device status was updated but the device could not be loaded.");
+        }
+
+        return ServiceResult<DeviceDto>.Success(updatedDevice);
+    }
+    public async Task<ServiceResult<DeviceDto>> AnnulDeviceAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        var device = await _dbContext.Devices
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (device is null)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_NOT_FOUND",
+                "Device was not found.");
+        }
+
+        if (device.Status == DeviceStatus.Annulled)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_ALREADY_ANNULLED",
+                "Device is already annulled.");
+        }
+
+        device.Status = DeviceStatus.Annulled;
+        device.IsActive = false;
+        device.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var updatedDevice = await GetDeviceByIdAsync(device.Id, cancellationToken);
+
+        if (updatedDevice is null)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_UPDATE_FAILED",
+                "Device status was updated but the device could not be loaded.");
+        }
+
+        return ServiceResult<DeviceDto>.Success(updatedDevice);
+    }
+    public async Task<ServiceResult<DeviceDto>> RestoreDeviceAsync(
+    int id,
+    CancellationToken cancellationToken = default)
+    {
+        var device = await _dbContext.Devices
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (device is null)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_NOT_FOUND",
+                "Device was not found.");
+        }
+
+        if (device.Status is not DeviceStatus.Lost and not DeviceStatus.Annulled)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_CANNOT_BE_RESTORED",
+                "Only lost or annulled devices can be restored.");
+        }
+
+        device.Status = DeviceStatus.Available;
+        device.IsActive = true;
+        device.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var updatedDevice = await GetDeviceByIdAsync(device.Id, cancellationToken);
+
+        if (updatedDevice is null)
+        {
+            return ServiceResult<DeviceDto>.Failure(
+                "DEVICE_UPDATE_FAILED",
+                "Device status was updated but the device could not be loaded.");
+        }
+
+        return ServiceResult<DeviceDto>.Success(updatedDevice);
+    }
 }
